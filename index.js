@@ -19,26 +19,24 @@ function parseCommandOptions(options, args) {
             } else {
                 options[key] = true;
             }
+        } else {
+            return false;
         }
     }
+    return true;
 }
 
-function set(key, value, args) {
-    if (key == undefined || key == '' || value == undefined || value == '') {
-        return 'ERROR: invalid arguments'
-    }
+function set(key, value, options) {
 
-    var options = {
-        ex: -1,
-        px: -1,
-        exat: -1,
-        nx: false,
-        xx: false,
-        keepTtl: false,
-        get: false
-    }
-
-    parseCommandOptions(options, args);
+    // var options = {
+    //     ex: -1,
+    //     px: -1,
+    //     exat: -1,
+    //     nx: false,
+    //     xx: false,
+    //     keepTtl: false,
+    //     get: false
+    // }
 
     var currentTime = Date.now();
     var ttl = undefined;
@@ -56,11 +54,11 @@ function set(key, value, args) {
     const oldValue = storage[key];
 
     if (oldValue != undefined && options.nx) {
-        return null;
+        return undefined;
     }
 
     if (oldValue == undefined && options.xx) {
-        return null;
+        return undefined;
     }
 
     var newValue = {
@@ -82,8 +80,10 @@ function set(key, value, args) {
         }
     }
 
-    return 'OK';
+    return true;
 }
+
+exports.set = set;
 
 function get(key) {
     if (key == undefined || key == '') {
@@ -94,8 +94,10 @@ function get(key) {
         return null;
     }
 
-    return { value: value.value, timeLeft: value.ttl - Date.now() };
+    return value.value;
 }
+
+exports.get = get;
 
 function del(keys) {
     var counter = 0;
@@ -109,10 +111,14 @@ function del(keys) {
     return counter;
 }
 
+exports.del = del;
+
 function keys(pattern) {
     var allkeys = Object.keys(storage);
     return allkeys;
 }
+
+exports.keys = keys;
 
 function cleanUp() {
     let currentTime = Date.now();
