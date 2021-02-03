@@ -1,30 +1,8 @@
-const readline = require("readline");
+
 
 var storage = {};
 
-function parseCommandOptions(options, args) {
-    var keys = Object.keys(options);
-    for (var i = 0; i < args.length; i++) {
-        var key = null;
-        for (var j = 0; j < keys.length; j++) {
-            if (args[i].toLowerCase() == keys[j].toLowerCase()) {
-                key = keys[j];
-                break;
-            }
-        }
-        if (key != null) {
-            if (typeof(options[key]) != 'boolean') {
-                options[key] = parseInt(args[i + 1]);
-                i++;
-            } else {
-                options[key] = true;
-            }
-        } else {
-            return false;
-        }
-    }
-    return true;
-}
+
 
 function set(key, value, options) {
 

@@ -31,10 +31,15 @@ app.post('/keys/:key', (req, res) => {
     });
     // console.log(options);
     // res.send(JSON.stringify(options));
-    console.log(req.body);
+    var value =  req.body.value;
+    if(value == undefined){
+        res.sendStatus(400);
+        return;
+    }
     let result = redis.set(req.params.key, req.body.value, options);
     if(result === true){
-        res.sendStatus(200);
+        res.status(200);
+        res.json({});
     } else {
         res.json({value: result});
     }
@@ -45,7 +50,8 @@ app.delete('/keys/:key', (req, res) => {
 })
 
 app.delete('/keys', (req, res) => {
-    var keys = req.query.keys;
+    var keys = req.body.keys;
+    console.log(req.body);
     res.json({result: redis.del(keys)});
 })
 
