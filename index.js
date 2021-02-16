@@ -1,10 +1,11 @@
+const { response } = require("express");
 
 
 var storage = {};
 
 
 
-function set(key, value, options) {
+function SET(key, value, options) {
 
     // var options = {
     //     ex: -1,
@@ -16,8 +17,16 @@ function set(key, value, options) {
     //     get: false
     // }
 
+    function output(response, value = null, error = null) {
+        return {
+            response: response,
+            value: value,
+            error: error
+        };
+    }
+
     var currentTime = Date.now();
-    var ttl = undefined;
+    var ttl;
 
     if (options.ex >= 0) {
         ttl = currentTime + options.ex * 1000;
@@ -32,14 +41,15 @@ function set(key, value, options) {
     const oldValue = storage[key];
 
     if (oldValue != undefined && options.nx) {
-        return undefined;
+        return output(false);
     }
 
     if (oldValue == undefined && options.xx) {
-        return undefined;
+        return output(false);;
     }
 
     var newValue = {
+        type: 'SIMPLE',
         value: value,
         ttl: ttl
     }
@@ -48,36 +58,55 @@ function set(key, value, options) {
         newValue.ttl = oldValue.ttl;
     }
 
-    storage[key] = newValue;
+    
 
     if (options.get) {
         if (oldValue != undefined) {
-            return oldValue.value;
+            if (oldValue.type == 'SIMPLE') {
+                storage[key] = newValue;
+                return output(true, oldValue.value);
+            }
+            return output(false, null, "Wrong type");
         } else {
-            return null;
+            storage[key] = newValue;
+            return output(true);
         }
     }
 
-    return true;
+    storage[key] = newValue;
+    return output(true);
 }
 
-exports.set = set;
+exports.SET = SET;
 
-function get(key) {
-    if (key == undefined || key == '') {
-        return 'Error: invalid arguments'
+function GET(key) {
+
+    function output(value, error = null){
+        return {
+            value: value,
+            error: error
+        };
     }
+
     var value = storage[key];
+
+   
+
+    
     if (value == undefined) {
-        return null;
+        return output(null);
     }
 
-    return value.value;
+    if(value.type != 'SIMPLE'){
+        return output(null, "Wrong type");
+    }
+
+    return output(value.value);
 }
 
-exports.get = get;
+exports.GET = GET;
 
-function del(keys) {
+function DEL(keys) {
     var counter = 0;
     keys.forEach((key) => {
         var value = storage[key];
@@ -89,14 +118,15 @@ function del(keys) {
     return counter;
 }
 
-exports.del = del;
+exports.DEL = DEL;
 
-function keys(pattern) {
+function KEYS(pattern) {
     var allkeys = Object.keys(storage);
+    console.log(storage);
     return allkeys;
 }
 
-exports.keys = keys;
+exports.KEYS = KEYS;
 
 function cleanUp() {
     let currentTime = Date.now();
@@ -114,13 +144,55 @@ function cleanUp() {
 }
 
 
+
+function HSET(key, field, value) {
+    if (storage[key] == undefined || storage[key].type != 'HASH') {
+        storage[key] = {
+            type: 'HASH',
+            value: {}
+        }
+    }
+
+    storage[key].value[field] = value;
+
+}
+
+exports.HSET = HSET;
+
+function HGET(key, field) {
+
+
+    let output = {
+        error: null,
+        value: null
+    };
+
+    if (storage[key] == undefined) {
+        return output;
+    }
+
+    if (storage[key].type != 'HASH') {
+        output.error = 'Wrong type';
+        return output;
+    }
+
+    if (storage[key].value[field] == undefined) {
+        return output;
+    }
+
+    output.value = storage[key].value[field];
+    return output;
+}
+
+exports.HGET = HGET;
+
 const main = () => {
 
-    
+
 
     setInterval(cleanUp, 1);
 
-    
+
 }
 
 
